@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  role         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model BlogPost {
+  id              Int          @id @default(autoincrement())
+  title           String
+  slug            String       @unique
+  excerpt         String?
+  content         String
+  featuredImageUrl String?
+  status          PostStatus @default(draft)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  publishedAt     DateTime?
+  categories      PostCategory[]
+  tags            PostTag[]
+}
+
+enum PostStatus {
+  draft
+  published
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  slug  String @unique
+  posts PostCategory[]
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String
+  slug  String @unique
+  posts PostTag[]
+}
+
+model PostCategory {
+  postId     Int
+  categoryId Int
+  post       BlogPost  @relation(fields: [postId], references: [id])
+  category   Category  @relation(fields: [categoryId], references: [id])
+  @@id([postId, categoryId])
+}
+
+model PostTag {
+  postId Int
+  tagId  Int
+  post   BlogPost @relation(fields: [postId], references: [id])
+  tag    Tag      @relation(fields: [tagId], references: [id])
+  @@id([postId, tagId])
+}
+
+model Lead {
+  id          Int      @id @default(autoincrement())
+  companyName String?
+  firstName   String?
+  lastName    String?
+  title       String?
+  email       String
+  tel         String?
+  niche       String?
+  city        String?
+  website     String?
+  service     String?
+  isQualified Boolean  @default(false)
+  contacted   Boolean  @default(false)
+  contactedAt DateTime?
+  notes       String?
+  source      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  messages    ContactMessage[]
+  emailLogs   EmailLog[]
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  leadId    Int?
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+  name      String
+  email     String
+  message   String
+  source    String?
+  createdAt DateTime @default(now())
+}
+
+model EmailTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String
+  subject   String
+  bodyHtml  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  campaigns EmailCampaign[]
+}
+
+model EmailCampaign {
+  id                Int      @id @default(autoincrement())
+  name              String
+  templateId        Int
+  template          EmailTemplate @relation(fields: [templateId], references: [id])
+  status            CampaignStatus @default(draft)
+  scheduledFor      DateTime?
+  sentAt            DateTime?
+  segmentCity       String?
+  segmentNiche      String?
+  segmentService    String?
+  onlyQualified     Boolean @default(true)
+  onlyNotContacted  Boolean @default(false)
+  totalRecipients   Int     @default(0)
+  sentCount         Int     @default(0)
+  failedCount       Int     @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  logs              EmailLog[]
+}
+
+enum CampaignStatus {
+  draft
+  scheduled
+  sending
+  sent
+}
+
+model EmailLog {
+  id         Int      @id @default(autoincrement())
+  campaignId Int
+  leadId     Int?
+  email      String
+  status     EmailStatus
+  errorMessage String?
+  sentAt     DateTime @default(now())
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id])
+  lead       Lead?         @relation(fields: [leadId], references: [id])
+}
+
+enum EmailStatus {
+  sent
+  failed
+}
+
+model Service {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  baseUrl        String
+  healthcheckPath String
+  processName    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
